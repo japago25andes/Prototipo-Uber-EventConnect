@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uber EventConnect - Fila Virtual</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .page {
+            display: none;
+            padding: 20px;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .uber-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+            margin-right: 10px;
+        }
+        
+        .event-connect {
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .event-info {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .event-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .event-venue {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .event-time {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .main-content {
+            text-align: center;
+        }
+        
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .queue-status {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .position-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0 auto 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .position-circle::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 2s infinite;
+        }
+        
+        @keyframes shine {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .queue-info {
+            text-align: center;
+        }
+        
+        .queue-info h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .queue-info p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .timer {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .timer-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .timer-value {
+            font-size: 36px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .progress-bar {
+            background: #eee;
+            height: 8px;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+        
+        .pickup-info {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .pickup-title {
+            color: #2e7d32;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .pickup-title::before {
+            content: '📍';
+            margin-right: 8px;
+        }
+        
+        .pickup-location {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .pickup-details {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .driver-info {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .driver-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .driver-details h4 {
+            margin-bottom: 5px;
+        }
+        
+        .driver-details p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .footer-info {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 400px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+        }
+        
+        .confidence-note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #856404;
+        }
+        
+        .steps-list {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 14px;
+        }
+        
+        .step-text {
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Página 1: Invitación a unirse -->
+    <div class="container">
+        <div class="page active" id="invitation">
+            <div class="header">
+                <div class="uber-logo">Uber</div>
+                <div class="event-connect">EventConnect</div>
+            </div>
+            
+            <div class="event-info">
+                <div class="event-title">Concierto Bad Bunny</div>
+                <div class="event-venue">Coliseo MedPlus</div>
+                <div class="event-time">Sábado 20 Jul • Termina aprox. 23:30</div>
+            </div>
+            
+            <div class="main-content">
+                <div class="icon">🎪</div>
+                <div class="title">Evita el caos al salir</div>
+                <div class="subtitle">Únete a la Fila Virtual y sal de forma ordenada con tarifa fija de $15,000</div>
+                
+                <div class="confidence-note">
+                    💡 <strong>¿Cómo funciona?</strong><br>
+                    Te asignamos un turno y te avisamos cuándo es tu momento de ir al punto de recogida. Mientras conserves tu lugar cerca del evento, mantienes tu posición en la fila.
+                </div>
+                
+                <div class="steps-list">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-text">Únete ahora a la fila virtual</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-text">Ve tu posición y tiempo estimado</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-text">Te avisamos cuando sea tu turno</div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="joinQueue()">Entrar a la Fila Virtual</button>
+                <button class="btn btn-secondary" onclick="closeApp()">Salir normalmente</button>
+            </div>
+        </div>
+        
+        <!-- Página 2: En la fila -->
+        <div class="page" id="waiting">
+            <div class="header">
+                <div class="uber-logo">Uber</div>
+                <div class="event-connect">EventConnect</div>
+            </div>
+            
+            <div class="event-info">
+                <div class="event-title">Concierto Bad Bunny</div>
+                <div class="event-venue">En la Fila Virtual</div>
+                <div class="event-time">Estado: Esperando turno</div>
+            </div>
+            
+            <div class="queue-status">
+                <div class="position-circle">
+                    <span id="position">47</span>
+                </div>
+                <div class="queue-info">
+                    <h3>Tu posición en la fila</h3>
+                    <p>Personas delante de ti</p>
+                </div>
+            </div>
+            
+            <div class="timer">
+                <div class="timer-label">Tiempo estimado de espera</div>
+                <div class="timer-value" id="countdown">12:30</div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress" style="width: 15%"></div>
+            </div>
+            
+            <div class="confidence-note">
+                ✅ <strong>Tu lugar está asegurado.</strong><br>
+                Puedes cerrar la app o perder señal sin perder tu posición. Te enviaremos una notificación cuando sea tu turno.
+            </div>
+            
+            <button class="btn btn-secondary" onclick="exitQueue()">Salir de la fila</button>
+        </div>
+        
+        <!-- Página 3: Es tu turno -->
+        <div class="page" id="your-turn">
+            <div class="header">
+                <div class="uber-logo">Uber</div>
+                <div class="event-connect">EventConnect</div>
+            </div>
+            
+            <div class="main-content">
+                <div class="icon">🚗</div>
+                <div class="title">¡Es tu turno!</div>
+                <div class="subtitle">Dirígete al punto de recogida. Tu conductor te está esperando.</div>
+                
+                <div class="pickup-info">
+                    <div class="pickup-title">Punto de Recogida</div>
+                    <div class="pickup-location">Carril 2 - Puerta Norte</div>
+                    <div class="pickup-details">A 2 minutos caminando • Sigue las señales EventConnect</div>
+                </div>
+                
+                <div class="driver-info">
+                    <div class="driver-avatar">CM</div>
+                    <div class="driver-details">
+                        <h4>Carlos Martínez</h4>
+                        <p>Mazda 3 Blanco • ABC-123</p>
+                        <p>⭐ 4.9 • 2,341 viajes</p>
+                    </div>
+                </div>
+                
+                <div class="timer" style="background: linear-gradient(135deg, #4caf50, #2e7d32);">
+                    <div class="timer-label">Tiempo restante para abordar</div>
+                    <div class="timer-value" id="boarding-countdown">05:00</div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="confirmPickup()">Confirmé, voy en camino</button>
+                <button class="btn btn-secondary" onclick="callDriver()">Llamar al conductor</button>
+            </div>
+        </div>
+        
+        <!-- Página 4: Confirmación final -->
+        <div class="page" id="success">
+            <div class="header">
+                <div class="uber-logo">Uber</div>
+                <div class="event-connect">EventConnect</div>
+            </div>
+            
+            <div class="main-content">
+                <div class="icon">✅</div>
+                <div class="title">¡Viaje confirmado!</div>
+                <div class="subtitle">Te recogimos en tiempo récord. Disfruta tu viaje a casa sin el caos habitual.</div>
+                
+                <div class="pickup-info" style="background: #e8f5e8; border-color: #4caf50;">
+                    <div class="pickup-title" style="color: #2e7d32;">Resumen de tu experiencia</div>
+                    <div class="pickup-location">Tiempo total de espera: 8 minutos</div>
+                    <div class="pickup-details">Tarifa fija pagada: $15,000 (ahorraste $8,500 vs. tarifa dinámica)</div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="restart()">Probar de nuevo</button>
+                <button class="btn btn-secondary" onclick="showFeedback()">Calificar experiencia</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPosition = 47;
+        let timeLeft = 750; // 12:30 en segundos
+        let boardingTime = 300; // 5:00 en segundos
+        
+        function joinQueue() {
+            document.getElementById('invitation').classList.remove('active');
+            document.getElementById('waiting').classList.add('active');
+            startWaitingTimer();
+        }
+        
+        function startWaitingTimer() {
+            const positionEl = document.getElementById('position');
+            const countdownEl = document.getElementById('countdown');
+            const progressEl = document.getElementById('progress');
+            
+            const timer = setInterval(() => {
+                timeLeft -= 3; // Acelerar para demo
+                
+                if (timeLeft % 30 === 0 && currentPosition > 0) {
+                    currentPosition -= Math.floor(Math.random() * 3) + 1;
+                    positionEl.textContent = Math.max(0, currentPosition);
+                    
+                    // Actualizar progreso
+                    const progressPercent = ((47 - currentPosition) / 47) * 100;
+                    progressEl.style.width = progressPercent + '%';
+                }
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                countdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (currentPosition <= 0 || timeLeft <= 0) {
+                    clearInterval(timer);
+                    showYourTurn();
+                }
+            }, 100);
+        }
+        
+        function showYourTurn() {
+            document.getElementById('waiting').classList.remove('active');
+            document.getElementById('your-turn').classList.add('active');
+            startBoardingTimer();
+        }
+        
+        function startBoardingTimer() {
+            const boardingCountdownEl = document.getElementById('boarding-countdown');
+            
+            const timer = setInterval(() => {
+                boardingTime--;
+                
+                const minutes = Math.floor(boardingTime / 60);
+                const seconds = boardingTime % 60;
+                boardingCountdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (boardingTime <= 0) {
+                    clearInterval(timer);
+                }
+            }, 1000);
+        }
+        
+        function confirmPickup() {
+            document.getElementById('your-turn').classList.remove('active');
+            document.getElementById('success').classList.add('active');
+        }
+        
+        function exitQueue() {
+            if (confirm('¿Estás seguro de que quieres salir de la fila? Perderás tu posición.')) {
+                restart();
+            }
+        }
+        
+        function callDriver() {
+            alert('Llamando a Carlos Martínez...\n📞 +57 300 123 4567');
+        }
+        
+        function closeApp() {
+            alert('Gracias por considerar EventConnect. ¡Que tengas un buen viaje!');
+            restart();
+        }
+        
+        function showFeedback() {
+            alert('¡Gracias por usar EventConnect!\n\n⭐⭐⭐⭐⭐\n\n"Increíble poder salir sin el caos de siempre. La fila virtual funcionó perfecto y ahorré tiempo y dinero."');
+            restart();
+        }
+        
+        function restart() {
+            // Reiniciar valores
+            currentPosition = 47;
+            timeLeft = 750;
+            boardingTime = 300;
+            
+            // Reiniciar UI
+            document.getElementById('position').textContent = '47';
+            document.getElementById('progress').style.width = '15%';
+            
+            // Mostrar página inicial
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById('invitation').classList.add('active');
+        }
+        
+        // Simular notificaciones push
+        function simulateNotifications() {
+            // Esta función simularía las notificaciones reales en un dispositivo móvil
+            console.log('🔔 Notificación: Tu turno se acerca, prepárate para salir');
+        }
+    </script>
+</body>
+</html>
